@@ -1,0 +1,191 @@
+<template>
+  <div class="container">
+    <h1>Paginated Scroll Items</h1>
+
+    <!-- 1. The main list rendering items -->
+    <ul class="item-list">
+      <li v-for="item in items" :key="item.id" class="list-item">
+        {{ item.title }}
+      </li>
+    </ul>
+
+    <!-- 2. Loading state feedback -->
+    <div v-if="loading" class="loading-state">
+      Loading more items...
+    </div>
+
+    <!-- 3. Target anchor element monitored by Intersection Observer -->
+    <div ref="scrollTrigger" class="trigger-element"></div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue';
+
+// Reactive States
+const items = ref([]);
+const page = ref(1);
+const limit = 10;
+const loading = ref(false);
+const hasMore = ref(true);
+
+// Template reference for the scroll observer anchor
+const scrollTrigger = ref(null);
+let observer = null;
+
+// Mock function representing your real API call
+const fetchItemsFromAPI = async (currentPage, itemsLimit) => {
+  try {
+    // Replace with your actual endpoint URL
+    const response = await fetch(`https://typicode.com{currentPage}&_limit=${itemsLimit}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("API error:", error);
+    return [];
+  }
+};
+
+// Orchestration function to manage pagination logic
+const loadNextPage = async () => {
+  if (loading.value || !hasMore.value) return;
+
+  loading.value = true;
+  
+  // Optional delay to prevent rapid-fire requests on shaky connections
+  const newItems = await fetchItemsFromAPI(page.value, limit);
+
+  if (newItems.length < limit) {
+    hasMore.value = false; // Stop observer when no more data exists
+  }
+
+  // Append new results to existing records
+  items.value = [...items.value, ...newItems];
+  page.value++;
+  
+  loading.value = false;
+};
+
+// Lifecycle: setup intersection observer when component mounts
+onMounted(() => {
+  observer = new IntersectionObserver((entries) => {
+    // If the anchor div enters viewport, run the logic
+    if (entries[0].isIntersecting && hasMore.value) {
+      loadNextPage();
+    }
+  }, {
+    rootMargin: '100px', // Pre-fetches 100px before reaching the bottom
+    threshold: 0.1
+  });
+
+  if (scrollTrigger.value) {
+    observer.observe(scrollTrigger.value);
+  }
+});
+
+// Lifecycle: clean up to avoid memory leaks
+onUnmounted(() => {
+  if (observer) observer.disconnect();
+});
+</script>
+
+<style scoped>
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+.item-list {
+  list-style: none;
+  padding: 0;
+}
+.list-item {
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #f4f4f4;
+  border-radius: 4px;
+}
+.loading-state {
+  text-align: center;
+  padding: 10px;
+  color: #666;
+}
+.trigger-element {
+  height: 20px;
+}
+</style>
+
+
+========================================================
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vue 3 Infinite Scroll</title>
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com"></script>
+  <style>
+    .item { padding: 20px; border-bottom: 1px solid #ccc; }
+    .loading { text-align: center; padding: 20px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div v-for="item in items" :key="item.id" class="item">
+      {{ item.id }}. {{ item.title }}
+    </div>
+    <div v-if="loading" class="loading">Loading more...</div>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, onUnmounted } = Vue;
+
+    createApp({
+      setup() {
+        const items = ref([]);
+        const page = ref(1);
+        const limit = ref(10);
+        const loading = ref(false);
+        const hasMore = ref(true);
+
+        const fetchItems = async () => {
+          if (loading.value || !hasMore.value) return;
+          loading.value = true;
+
+          try {
+            const res = await fetch(`https://typicode.com{page.value}&_limit=${limit.value}`);
+            const data = await res.json();
+
+            if (data.length < limit.value) hasMore.value = false;
+            items.value.push(...data);
+            page.value += 1;
+          } catch (err) {
+            console.error(err);
+          } finally {
+            loading.value = false;
+          }
+        };
+
+        const handleScroll = () => {
+          const bottomOfWindow = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50;
+          if (bottomOfWindow) {
+            fetchItems();
+          }
+        };
+
+        onMounted(() => {
+          fetchItems();
+          window.addEventListener('scroll', handleScroll);
+        });
+
+        onUnmounted(() => {
+          window.removeEventListener('scroll', handleScroll);
+        });
+
+        return { items, loading };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

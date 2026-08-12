@@ -3,7 +3,7 @@
   <h1>Menu</h1>
   <ul>
     <li><a href="index.php"><?php echo __('Home'); ?></a></li>
-    <li><a href="index.php?p=subject"><?php echo __('Daftar Tajuk'); ?></a></li>
+    <li><a href="index.php?p=tajuk_subjek"><?php echo __('Daftar Tajuk Subjek'); ?></a></li>
     <li><a href="index.php?p=news"><?php echo __('Library News'); ?></a></li>
     <li><a href="index.php?p=libinfo"><?php echo __('Library Information'); ?></a></li>
     <li><a href="index.php?p=peta" class="openPopUp" width="600" height="400"><?php echo __('Library Location'); ?></a></li>
