@@ -22,10 +22,10 @@ Plugins::register(Plugins::CONTENT_BEFORE_LOAD, function() {
     // Hook into output buffering to inject tags right before </head>
     ob_start(function($buffer) {
         $custom_assets = '
-        <link href='.SWB.'plugins/subjects/assets/css/datatable/style.css rel="stylesheet">
-        <script src='.SWB.'plugins/subjects/assets/js/vue.global.js></script>
-        <script src='.SWB.'plugins/subjects/assets/js/vue-router.global.js></script>
-        <script src='.SWB.'plugins/subjects/assets/js/datatable/vue3-easy-data-table.umd.js></script>
+        <link href='.SWB.'plugins/daftar_tajuk/assets/css/datatable/style.css rel="stylesheet">
+        <script src='.SWB.'plugins/daftar_tajuk/assets/js/vue.global.js></script>
+        <script src='.SWB.'plugins/daftar_tajuk/assets/js/vue-router.global.js></script>
+        <script src='.SWB.'plugins/daftar_tajuk/assets/js/datatable/vue3-easy-data-table.umd.js></script>
         ';
         
         // Inject before closing head tag if it exists, otherwise prepend

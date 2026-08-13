@@ -158,6 +158,10 @@ echo '<script type="module">
                 const hasMore = ref(true);
                 const selectedLetter = ref("");
 
+                const baseurl = "'.SWB.'";
+
+                console.log("Base URL ", baseurl);
+
                 const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
 
                 const fetchItems = async (isNewFilter = false) => {
@@ -167,7 +171,7 @@ echo '<script type="module">
                   
                   try {
                     
-                    const res = await fetch(`http://localhost/slimsjnl/index.php?p=api/subjects&query=${selectedLetter.value}&page=${page.value}&limit=${limit.value}`);
+                    const res = await fetch(`${baseurl}index.php?p=api/subjects&query=${selectedLetter.value}&page=${page.value}&limit=${limit.value}`);
                     const data = await res.json();
 
                     console.log("Page", page.value);
