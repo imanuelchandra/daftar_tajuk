@@ -19,6 +19,10 @@ $path = str_replace(['\'', '"'], '', strip_tags($_GET['p']));
   padding-right:50px;
 }
 
+.alphabet-index a {
+  padding:5px;
+}
+
 template {
   display: block;
   margin-bottom: 20px;
@@ -34,7 +38,8 @@ template {
 /* Parent categories */
 .taxonomy-list .parent-term {
   font-weight: bold;
-  font-size: 2rem;
+  font-family: FontAwesome;
+  font-size: 19pt;
   margin-bottom: 0.5rem;
   display: block;
 }
@@ -42,7 +47,8 @@ template {
 /* Child categories shifted over to indicate nesting */
 .taxonomy-list .child-term {
   margin-left: 1.5rem;
-  font-size: 1.8rem;
+  font-family: FontAwesome;
+  font-size: 15pt;
   color: #555555;
   /* display: list-item;
   list-style-type: disc; */
@@ -67,21 +73,32 @@ $abjad = range('A', 'Z');
 
 $str_output  .='<div class="alphabet-index">';
 $str_output  .='Pindah Ke: ';
-foreach ($abjad as $huruf) {
-    $str_output  .='[<a href="#" @click.prevent="scrollToSection(\'' . $huruf . '\')">' . $huruf . '</a> ] ';
-}
+// foreach ($abjad as $huruf) {
+//     $str_output  .='[<a href="#" @click.prevent="scrollToSection(\'' . $huruf . '\')">' . $huruf . '</a> ] ';
+// }
+
+$str_output  .='<a :href="\'#\' + char" @click.prevent="filterByLetter(\'\')" :class="{ active: selectedLetter === \'\' }">All</a>';
+$str_output  .='<a :href="\'#\' + char" v-for="char in alphabet" 
+        :key="char" 
+        @click.prevent="filterByLetter(char)"
+        :class="{ active: selectedLetter === char }">{{ char }}</a>';
+
 $str_output  .='</div>';
 
+// $str_output  .='<div class="scroll-container" @scroll="handleScroll">';
 $str_output  .='<dl class="taxonomy-list">';
 $str_output  .='<template v-for="item in items" :key="item.topic_id">';
-$str_output  .='<dt :id="item.dt_id" class="parent-term">{{ item.topic }} ({{ item.classification }})</dt>';
+$str_output  .='<dt :id="item.dt_id" class="parent-term"><a :href="item.buku_url"> {{ item.topic }} </a> ({{ item.classification }})</dt>';
 $str_output  .='<dd class="child-term" v-for="rt_item in item.related_terms" :key="rt_item.rt_id">';
-$str_output  .='{{ rt_item.rt_id }} {{ rt_item.rt_topic }} ({{ rt_item.rt_classification }})';
+$str_output  .='{{ rt_item.rt_id }} <a :href="rt_item.buku_url_sub"> {{ rt_item.rt_topic }} </a> ({{ rt_item.rt_classification }})';
 $str_output  .='</dd>';
 $str_output  .='</template>';
 $str_output  .='</dl>';
+$str_output  .='<div v-if="loading" class="loading">Loading more data...</div>';
+$str_output  .='<div v-if="!hasMore && !loading" class="loading">No more records.</div>';
+// $str_output  .='</div>';
 
-$str_output  .='<div v-if="loading" class="loading">Loading more...</div>';
+// $str_output  .='<div v-if="loading" class="loading">Loading more...</div>';
         
 
 // $topic = DB::getInstance()->prepare('SELECT t.topic_id, t.topic, t.classification, t.topic_type, t.auth_list  FROM mst_topic AS t LEFT JOIN biblio_topic AS bt ON t.topic_id=bt.topic_id WHERE bt.biblio_id IS NULL OR bt.topic_id IS NULL ORDER BY t.topic ASC;');
@@ -130,6 +147,7 @@ echo $str_output;
 echo '<script type="module">
         const { createApp, ref, onMounted, onUnmounted } = Vue;
         
+        const id = ref(null);
 
         const app = createApp({
              setup() {
@@ -138,30 +156,38 @@ echo '<script type="module">
                 const limit = ref(20);
                 const loading = ref(false);
                 const hasMore = ref(true);
+                const selectedLetter = ref("");
 
-                const fetchItems = async () => {
-                  if (loading.value || !hasMore.value) return;
+                const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
+
+                const fetchItems = async (isNewFilter = false) => {
+                  
+                  if (loading.value || (!hasMore.value && !isNewFilter)) return;
                   loading.value = true;
                   
                   try {
-                    const res = await fetch(`http://localhost/slimsjnl/index.php?p=api/subjects&page=${page.value}&limit=${limit.value}`);
+                    
+                    const res = await fetch(`http://localhost/slimsjnl/index.php?p=api/subjects&query=${selectedLetter.value}&page=${page.value}&limit=${limit.value}`);
                     const data = await res.json();
 
                     console.log("Page", page.value);
                     console.log(data);
 
+                    if (isNewFilter) {
+                      items.value = data.data;
+                    } else {
+                      items.value.push(...data.data);
+                    }
+
                     hasMore.value = data.pagination.has_more;
 
                     console.log("hasMore", hasMore.value);
-                    // //if (data.length < limit.value) hasMore.value = false;
-                    
-                    if (hasMore.value) {
-                      items.value.push(...data.data);
-                      page.value += 1;
-                    }else{
-                      items.value.push(...data.data);
-                      hasMore.value = false;
+
+                    if (!hasMore.value) {
+                     hasMore.value = false;
                     }
+
+
                   } catch (err) {
                     console.error(err);
                   } finally {
@@ -169,9 +195,21 @@ echo '<script type="module">
                   }
                 };
 
-                const handleScroll = () => {
+                // Handle Alphabet Click
+                const filterByLetter = (letter) => {
+                  selectedLetter.value = letter;
+                  page.value = 1;
+                  hasMore.value = true;
+                  fetchItems(true);
+                };
+
+                 // Handle Scrolling Container Event
+                const handleScroll = (e) => {
                   const bottomOfWindow = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50;
-                  if (bottomOfWindow) {
+
+                  // Check if scrolled near bottom (within 20px)
+                  if (bottomOfWindow && !loading.value && hasMore.value) {
+                    page.value += 1;
                     fetchItems();
                   }
                 };
@@ -185,17 +223,16 @@ echo '<script type="module">
                   window.removeEventListener("scroll", handleScroll);
                 });
 
-                return { items, loading };
-            },
-            methods: {
-                scrollToSection(param) {
-                  console.log("Received parameter:", param);
-                  const element = document.getElementById("#" + param);
-                  if (element) {
-                    element.scrollIntoView({ behavior: "smooth" });
-                  }
-                }
-              }
+                return { 
+                  items,
+                  alphabet,
+                  selectedLetter,
+                  loading,
+                  hasMore,
+                  filterByLetter,
+                  handleScroll
+                };
+            }
         });
       
         app.mount("#app");

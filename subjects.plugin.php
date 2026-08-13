@@ -10,9 +10,6 @@
 use SLiMS\Plugins;
 use SLiMS\DB;
 
-global $sysconf;
-global $dbs;
-
 $plugin = Plugins::getInstance();
 
 Plugins::getInstance()->registerAutoload(__DIR__);
@@ -50,13 +47,21 @@ Plugins::register('custom_api_route', function ($router) {
 
     //http://localhost/slimsjnl/index.php?p=api/subjects&page=2&limit=10
 
+    $query = isset($_GET['query']) ? (int)$_GET['query']: 'A';
     $page = isset($_GET['page']) ? (int)$_GET['page']: 1;
     $page = max(1, $page);
     $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
     $limit = max(1, min(100, $limit)); // Cap limit to 100 max
     $offset = ($page - 1) * $limit;
 
-    $countItems = DB::getInstance()->prepare('SELECT COUNT(*) FROM mst_topic AS t LEFT JOIN biblio_topic AS bt ON t.topic_id=bt.topic_id WHERE bt.biblio_id IS NULL OR bt.topic_id IS NULL ORDER BY t.topic ASC');
+    $criteria = '(bt.biblio_id IS NULL OR bt.topic_id IS NULL) ';
+
+    if (isset($_GET['query']) and !empty($_GET['query'])) {
+        $query = trim($_GET['query']);
+        $criteria .= ' AND (t.topic LIKE \'' . $query . '%\')';
+    }
+
+    $countItems = DB::getInstance()->prepare('SELECT COUNT(*) FROM mst_topic AS t LEFT JOIN biblio_topic AS bt ON t.topic_id=bt.topic_id WHERE '.$criteria.' ORDER BY t.topic ASC');
     $countItems->execute();
     $totalItems = (int)$countItems->fetchColumn();
     $totalPages = ceil($totalItems / $limit);
@@ -65,7 +70,7 @@ Plugins::register('custom_api_route', function ($router) {
     $hasMore = $page < $totalPages; 
 
 
-    $topic = DB::getInstance()->prepare('SELECT t.topic_id, t.topic, t.classification, t.topic_type, t.auth_list  FROM mst_topic AS t LEFT JOIN biblio_topic AS bt ON t.topic_id=bt.topic_id WHERE bt.biblio_id IS NULL OR bt.topic_id IS NULL ORDER BY t.topic ASC LIMIT '.$limit.' OFFSET '.$offset.';');
+    $topic = DB::getInstance()->prepare('SELECT t.topic_id, t.topic, t.classification, t.topic_type, t.auth_list  FROM mst_topic AS t LEFT JOIN biblio_topic AS bt ON t.topic_id=bt.topic_id WHERE '.$criteria.' ORDER BY t.topic ASC LIMIT '.$limit.' OFFSET '.$offset.';');
     $topic->execute();
 
     $return = array();
