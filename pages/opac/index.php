@@ -7,7 +7,7 @@ defined('INDEX_AUTH') or die('Direct access is not allowed!');
 
 if (!isset($opac)) $opac = $this;
 
-$path = str_replace(['\'', '"'], '', strip_tags($_GET['p']));
+//$path = str_replace(['\'', '"'], '', strip_tags($_GET['p']));
 
 ?>
 
@@ -58,45 +58,45 @@ template {
 
 </style>
 
-<div class="container py-4">
+<!-- <div class="container py-4">
    <div class="row">
-        <div class="col-md-8 offset-lg-4">
+        <div class="col-md-8 offset-lg-4"> -->
          
 
 
 <?php
 
 $str_output  = '<div id="app">';
-$str_output  .= '<h1>Daftar Tajuk Subjek</h1>';
+//$str_output  .= '<h1>Daftar Tajuk Subjek</h1>';
 
 $abjad = range('A', 'Z');
 
-$str_output  .='<div class="alphabet-index">';
+$str_output  .='<div class="alphabet-index flex flex-wrap items-center justify-center gap-1 p-4 bg-white rounded-lg shadow-sm border border-gray-100">';
 $str_output  .='Pindah Ke: ';
 // foreach ($abjad as $huruf) {
 //     $str_output  .='[<a href="#" @click.prevent="scrollToSection(\'' . $huruf . '\')">' . $huruf . '</a> ] ';
 // }
 
-$str_output  .='<a :href="\'#\' + char" @click.prevent="filterByLetter(\'\')" :class="{ active: selectedLetter === \'\' }">All</a>';
+$str_output  .='<a :href="\'#\' + char" @click.prevent="filterByLetter(\'\')" :class="{ active: selectedLetter === \'\' }" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors bg-blue-600 text-white shadow-sm">All</a>';
 $str_output  .='<a :href="\'#\' + char" v-for="char in alphabet" 
         :key="char" 
         @click.prevent="filterByLetter(char)"
-        :class="{ active: selectedLetter === char }">{{ char }}</a>';
+        :class="{ active: selectedLetter === char }" class="w-8 h-8 flex items-center justify-center text-sm font-semibold rounded-md transition-colors bg-blue-50 text-blue-600 border border-blue-200">{{ char }}</a>';
 
 $str_output  .='</div>';
 
-// $str_output  .='<div class="scroll-container" @scroll="handleScroll">';
-$str_output  .='<dl class="taxonomy-list">';
+$str_output  .='<div class="scroll-container" style="height: 500px; overflow-y: auto;" @scroll="handleScroll">';
+$str_output  .='<dl class="max-w-md divide-y-2 divide-dashed hover:divide-solid">';
 $str_output  .='<template v-for="item in items" :key="item.topic_id">';
-$str_output  .='<dt :id="item.dt_id" class="parent-term"><a :href="item.buku_url"> {{ item.topic }} </a> ({{ item.classification }})</dt>';
-$str_output  .='<dd class="child-term" v-for="rt_item in item.related_terms" :key="rt_item.rt_id">';
-$str_output  .='{{ rt_item.rt_id }} <a :href="rt_item.buku_url_sub"> {{ rt_item.rt_topic }} </a> ({{ rt_item.rt_classification }})';
+$str_output  .='<dt :id="item.dt_id" class="pt-2 pb-1 sm:pb-1 text-sm font-medium text-heading"><a :href="item.buku_url"> {{ item.topic }} </a> ({{ item.classification }})</dt>';
+$str_output  .='<dd class="flex pt-1 pb-1 text-sm text-body" v-for="rt_item in item.related_terms" :key="rt_item.rt_id">';
+$str_output  .='<div class="w-6 h-6 flex-none text-center bg-blue-200 border-2 border-solid shadow-sm border border-gray-100 rounded-l-lg">{{ rt_item.rt_id }}</div><div class="pl-2 flex-1"><a :href="rt_item.buku_url_sub"> {{ rt_item.rt_topic }} </a> ({{ rt_item.rt_classification }})</div>';
 $str_output  .='</dd>';
 $str_output  .='</template>';
 $str_output  .='</dl>';
 $str_output  .='<div v-if="loading" class="loading">Loading more data...</div>';
 $str_output  .='<div v-if="!hasMore && !loading" class="loading">No more records.</div>';
-// $str_output  .='</div>';
+$str_output  .='</div>';
 
 // $str_output  .='<div v-if="loading" class="loading">Loading more...</div>';
         
@@ -138,10 +138,10 @@ $str_output  .='<div v-if="!hasMore && !loading" class="loading">No more records
 echo $str_output;
 
 ?>
-        </div>
+        <!-- </div>
         <div class="col-md-4"></div>
   </div>
-</div>
+</div> -->
 
 <?php
 echo '<script type="module">
@@ -209,10 +209,18 @@ echo '<script type="module">
 
                  // Handle Scrolling Container Event
                 const handleScroll = (e) => {
-                  const bottomOfWindow = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50;
+                  // const bottomOfWindow = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50;
+
+                  // console.log(bottomOfWindow);
 
                   // Check if scrolled near bottom (within 20px)
-                  if (bottomOfWindow && !loading.value && hasMore.value) {
+                  // if (bottomOfWindow && !loading.value && hasMore.value) {
+                  //   page.value += 1;
+                  //   fetchItems();
+                  // }
+
+                  if (!loading.value && hasMore.value) {
+                    hasMore.value = true;
                     page.value += 1;
                     fetchItems();
                   }
